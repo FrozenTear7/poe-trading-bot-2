@@ -1,4 +1,4 @@
-from config.constants import RABBITMQ_CONFIG
+from config.constants import RABBITMQ_EXCHANGE_NAME
 from src.log_listener.LogListener import LogListener
 from utils.printtime import printtime
 import pika
@@ -6,10 +6,12 @@ import pika
 
 if __name__ == "__main__":
     try:
-        connection = pika.BlockingConnection(pika.ConnectionParameters("localhost"))
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters("localhost", heartbeat=100)
+        )
         channel = connection.channel()
         channel.exchange_declare(
-            exchange=RABBITMQ_CONFIG["exchange"], exchange_type="direct"
+            exchange=RABBITMQ_EXCHANGE_NAME, exchange_type="direct"
         )
 
         printtime("Starting the Log Listener")
