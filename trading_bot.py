@@ -16,29 +16,38 @@ from src.trading_bot.TradingBotConsumer import TradingBotConsumer
 
 
 if __name__ == "__main__":
-    try:
-        printtime("Starting the Trading bot")
+    consumer_threads = []
 
-        printtime("Clearing the ignore list")
-        type_clear_ignore_list()
+    printtime("Starting the Trading bot")
 
-        printtime("Starting the consumer threads")
-        afk_mode_consumer = TradingBotConsumer(
-            RABBITMQ_ROUTING_AFK_MODE, afk_off_callback
-        ).start()
-        incoming_trade_request_consumer = TradingBotConsumer(
+    printtime("Clearing the ignore list")
+    # type_clear_ignore_list()
+
+    printtime("Starting the consumer threads")
+
+    consumer_threads.append(
+        TradingBotConsumer(RABBITMQ_ROUTING_AFK_MODE, afk_off_callback)
+    )
+    consumer_threads.append(
+        TradingBotConsumer(
             RABBITMQ_ROUTING_INCOMING_TRADE_REQUEST, incoming_trade_request_callback
-        ).start()
-        player_has_joined_the_area_consumer = TradingBotConsumer(
+        )
+    )
+    consumer_threads.append(
+        TradingBotConsumer(
             RABBITMQ_ROUTING_PLAYER_HAS_JOINED_THE_AREA,
             player_has_joined_the_area_callback,
-        ).start()
-        player_has_left_the_area_consumer = TradingBotConsumer(
-            RABBITMQ_ROUTING_PLAYER_HAS_LEFT_THE_AREA, player_has_left_the_area_callback
-        ).start()
+        )
+    )
+    consumer_threads.append(
+        TradingBotConsumer(
+            RABBITMQ_ROUTING_PLAYER_HAS_LEFT_THE_AREA,
+            player_has_left_the_area_callback,
+        )
+    )
 
-    except KeyboardInterrupt:
-        printtime("Stopping the Trading bot")
-    except Exception as e:
-        printtime("Encountered an exception:")
-        print(e)
+    for consumer_thread in consumer_threads:
+        consumer_thread.start()
+
+    for consumer_thread in consumer_threads:
+        consumer_thread.join()
