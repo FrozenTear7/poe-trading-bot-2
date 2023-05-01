@@ -1,3 +1,6 @@
+from typing import List
+
+import pyautogui
 from config.constants import (
     RABBITMQ_ROUTING_AFK_MODE,
     RABBITMQ_ROUTING_INCOMING_TRADE_REQUEST,
@@ -16,12 +19,13 @@ from src.trading_bot.TradingBotConsumer import TradingBotConsumer
 
 
 if __name__ == "__main__":
-    consumer_threads = []
+    consumer_threads: List[TradingBotConsumer] = []
 
     printtime("Starting the Trading bot")
+    pyautogui.sleep(3)
 
     printtime("Clearing the ignore list")
-    # type_clear_ignore_list()
+    type_clear_ignore_list()
 
     printtime("Starting the consumer threads")
 

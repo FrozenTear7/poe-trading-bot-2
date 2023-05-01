@@ -1,17 +1,23 @@
 import threading
-
 import pika
 from config.constants import (
     RABBITMQ_EXCHANGE_NAME,
     RABBITMQ_KILL_ALL_TRADING_BOT_THREADS,
 )
 from src.trading_bot.TradingBotState import TradingBotState
+from typing import Callable
 
 
 class TradingBotConsumer(threading.Thread):
     initialized = False
 
-    def __init__(self, routing_key: str, trading_bot_action, *args, **kwargs):
+    def __init__(
+        self,
+        routing_key: str,
+        trading_bot_action: Callable[[threading.Lock, TradingBotState, str], None],
+        *args,
+        **kwargs
+    ) -> None:
         super(TradingBotConsumer, self).__init__(*args, **kwargs)
         self.routing_key = routing_key
         self.trading_bot_action = trading_bot_action
@@ -26,19 +32,23 @@ class TradingBotConsumer(threading.Thread):
             cls.initialized = True
 
     @classmethod
-    def callback(cls, trading_bot_action, body: str):
+    def callback(
+        cls,
+        trading_bot_action: Callable[[threading.Lock, TradingBotState, str], None],
+        body: str,
+    ):
         if body == RABBITMQ_KILL_ALL_TRADING_BOT_THREADS:
             exit(0)
         else:
             trading_bot_action(
                 cls.lock,
                 cls.trading_bot_state,
-                body=body,
+                body,
             )
 
     def run(self):
         connection = pika.BlockingConnection(
-            pika.ConnectionParameters("localhost", heartbeat=100)
+            pika.ConnectionParameters("localhost", heartbeat=0)
         )
         channel = connection.channel()
         channel.exchange_declare(

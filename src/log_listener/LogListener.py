@@ -1,4 +1,3 @@
-import json
 import re
 from config.regexes import (
     AFK_MODE_ON_REGEX,
@@ -10,7 +9,6 @@ from config.regexes import (
     TRADE_REQUEST_REGEX,
 )
 from config.constants import (
-    LOG_FILE_LOCATION,
     RABBITMQ_EXCHANGE_NAME,
     RABBITMQ_ROUTING_AFK_MODE,
     RABBITMQ_ROUTING_INCOMING_TRADE_REQUEST,
@@ -20,22 +18,23 @@ from config.constants import (
     RABBITMQ_ROUTING_TRADE_CANCELLED,
 )
 import pyautogui
+from config.user_setup import LOG_FILE_LOCATION
 from src.trading_bot.TradeRequest import TradeRequest
 
 from utils.printtime import printtime
 
 
 class LogListener:
-    def __init__(self, channel):
+    def __init__(self, channel) -> None:
         self.channel = channel
         self.log_file = open(LOG_FILE_LOCATION, "r", encoding="utf8")
         # calling readlines() at the start sets the cursor at the end of the file, listening for new changes
         self.log_file.readlines()
 
-    def is_afk_mode_on(self, message):
+    def is_afk_mode_on(self, message: str):
         return re.match(AFK_MODE_ON_REGEX, message) is not None
 
-    def has_incoming_trade_request(self, message):
+    def has_incoming_trade_request(self, message: str):
         incoming_trade_request_match = re.match(TRADE_REQUEST_REGEX, message)
         # TODO: Check if offered values match the current price we want
         return (
@@ -50,7 +49,7 @@ class LogListener:
             else None
         )
 
-    def has_player_joined_the_area(self, message):
+    def has_player_joined_the_area(self, message: str):
         player_has_joined_the_area_match = re.match(
             PLAYER_HAS_JOINED_THE_AREA_REGEX, message
         )
@@ -60,7 +59,7 @@ class LogListener:
             else None
         )
 
-    def has_player_left_the_area(self, message):
+    def has_player_left_the_area(self, message: str):
         player_has_left_the_area_match = re.match(
             PLAYER_HAS_LEFT_THE_AREA_REGEX, message
         )
@@ -70,10 +69,10 @@ class LogListener:
             else None
         )
 
-    def has_trade_been_accepted(self, message):
+    def has_trade_been_accepted(self, message: str):
         return re.match(TRADE_ACCEPTED_REGEX, message) is not None
 
-    def has_trade_been_cancelled(self, message):
+    def has_trade_been_cancelled(self, message: str):
         return re.match(TRADE_CANCELLED_REGEX, message) is not None
 
     def listen(self):
@@ -101,7 +100,7 @@ class LogListener:
                     )
                     if incoming_trade_request is not None:
                         printtime(
-                            f"Incoming trade request from: {incoming_trade_request.trader_nickname}, your {incoming_trade_request.own_currency_amount} of {incoming_trade_request.own_currency_name} for their {incoming_trade_request.trader_currency_amount} of {incoming_trade_request.trader_currency_name}"
+                            f"Incoming trade request from: {incoming_trade_request.trader_nickname}, your {incoming_trade_request.own_currency_amount} {incoming_trade_request.own_currency_name} for their {incoming_trade_request.trader_currency_amount} {incoming_trade_request.trader_currency_name}"
                         )
                         self.channel.basic_publish(
                             exchange=RABBITMQ_EXCHANGE_NAME,
@@ -120,7 +119,7 @@ class LogListener:
                         self.channel.basic_publish(
                             exchange=RABBITMQ_EXCHANGE_NAME,
                             routing_key=RABBITMQ_ROUTING_PLAYER_HAS_JOINED_THE_AREA,
-                            body=player_who_joined_the_area_nickname,
+                            body=str(player_who_joined_the_area_nickname),
                         )
                         continue
 
@@ -134,7 +133,7 @@ class LogListener:
                         self.channel.basic_publish(
                             exchange=RABBITMQ_EXCHANGE_NAME,
                             routing_key=RABBITMQ_ROUTING_PLAYER_HAS_LEFT_THE_AREA,
-                            body=player_who_left_the_area_nickname,
+                            body=str(player_who_left_the_area_nickname),
                         )
                         continue
 

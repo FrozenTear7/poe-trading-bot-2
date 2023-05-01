@@ -15,7 +15,8 @@ import pika
 
 if __name__ == "__main__":
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters("localhost", heartbeat=100)
+        pika.ConnectionParameters("localhost", heartbeat=0)
+        # pika.ConnectionParameters("localhost", heartbeat=None)
     )
     channel = connection.channel()
     channel.exchange_declare(exchange=RABBITMQ_EXCHANGE_NAME, exchange_type="direct")
