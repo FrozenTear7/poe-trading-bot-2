@@ -1,4 +1,4 @@
-from utils.translate_coords import translate_coords
+from src.utils.translate_coords import translate_coords
 
 TRADE_WINDOW_CELLS = (5, 12)
 

@@ -3,8 +3,10 @@ from typing import Tuple
 import pyautogui
 import pyperclip
 
-from config.regexes import ITEM_INFO_SECTION_DIVIDER, STACKS_SIZE_REGEX
-from utils.exceptions.CurrencyWrongCursorPlacement import CurrencyWrongCursorPlacement
+from src.config.regexes import ITEM_INFO_SECTION_DIVIDER, STACKS_SIZE_REGEX
+from src.utils.exceptions.CurrencyWrongCursorPlacement import (
+    CurrencyWrongCursorPlacement,
+)
 
 
 def get_currency_stack_info() -> Tuple[int, int]:

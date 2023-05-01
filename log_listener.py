@@ -1,4 +1,4 @@
-from config.constants import (
+from src.config.constants import (
     RABBITMQ_EXCHANGE_NAME,
     RABBITMQ_KILL_ALL_TRADING_BOT_THREADS,
     RABBITMQ_ROUTING_AFK_MODE,
@@ -9,7 +9,7 @@ from config.constants import (
     RABBITMQ_ROUTING_TRADE_CANCELLED,
 )
 from src.log_listener.LogListener import LogListener
-from utils.printtime import printtime
+from src.utils.printtime import printtime
 import pika
 
 

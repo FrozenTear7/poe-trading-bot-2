@@ -1,7 +1,7 @@
 from typing import Literal, cast
-from config.stash_tabs.StashTab import StashTab
-from config.user_setup import STASH_TABS
-from utils.exceptions.CurrencyInvalidConfig import CurrencyInvalidConfig
+from src.config.stash_tabs.StashTab import StashTab
+from src.config.user_setup import STASH_TABS
+from src.utils.exceptions.CurrencyInvalidConfig import CurrencyInvalidConfig
 
 
 def get_currency_placement(currency_name: str, mode: Literal["sell", "buy"]):

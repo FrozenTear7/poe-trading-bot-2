@@ -1,7 +1,7 @@
 from typing import List
 
 import pyautogui
-from config.constants import (
+from src.config.constants import (
     RABBITMQ_ROUTING_AFK_MODE,
     RABBITMQ_ROUTING_INCOMING_TRADE_REQUEST,
     RABBITMQ_ROUTING_PLAYER_HAS_JOINED_THE_AREA,
@@ -14,7 +14,7 @@ from src.trading_bot.trading_bot_functions import (
     player_has_joined_the_area_callback,
     player_has_left_the_area_callback,
 )
-from utils.printtime import printtime
+from src.utils.printtime import printtime
 from src.trading_bot.TradingBotConsumer import TradingBotConsumer
 
 

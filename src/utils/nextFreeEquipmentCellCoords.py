@@ -1,5 +1,5 @@
 from math import floor
-from config.coordinates import CELL_SIZE, EQUIPMENT_START, TRADE_WINDOW_CELLS
+from src.config.coordinates import CELL_SIZE, EQUIPMENT_START, TRADE_WINDOW_CELLS
 
 
 def nextFreeEquipmentCellCoords(index: int):

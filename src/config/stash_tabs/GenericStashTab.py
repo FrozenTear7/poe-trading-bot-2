@@ -1,7 +1,7 @@
 from typing import Literal, Tuple
-from config.coordinates import CELL_SIZE
-from config.stash_tabs.StashTab import StashTab
-from utils.translate_coords import translate_coords
+from src.config.coordinates import CELL_SIZE
+from src.config.stash_tabs.StashTab import StashTab
+from src.utils.translate_coords import translate_coords
 
 
 GENERIC_TAB_OFFSET = translate_coords(0.152, 0.152)

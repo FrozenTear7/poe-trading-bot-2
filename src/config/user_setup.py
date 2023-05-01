@@ -1,5 +1,5 @@
-from config.stash_tabs.CurrencyStashTab import CurrencyStashTab
-from config.stash_tabs.GenericStashTab import GenericStashTab
+from src.config.stash_tabs.CurrencyStashTab import CurrencyStashTab
+from src.config.stash_tabs.GenericStashTab import GenericStashTab
 
 
 OWN_NICKNAME = "RainbowPablo"

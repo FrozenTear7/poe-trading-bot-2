@@ -1,9 +1,9 @@
 import json
 from typing import Literal
 import pyautogui
-from config.constants import PLAYER_JOINED_AREA_TRADE_WAIT_TIME
-from config.coordinates import STASH_PLACE
-from config.user_setup import STASH_TABS
+from src.config.constants import PLAYER_JOINED_AREA_TRADE_WAIT_TIME
+from src.config.coordinates import STASH_PLACE
+from src.config.user_setup import STASH_TABS
 from src.trading_bot.TradeRequest import TradeRequest
 from src.trading_bot.TradingBotState import TradingBotState
 from src.trading_bot.TradingBotStateEnum import TradingBotStateEnum
@@ -13,11 +13,11 @@ from src.trading_bot.chat_commands import (
     type_leave_party,
     type_trade_with_trader,
 )
-from utils.get_currency_placement import get_currency_placement
-from utils.item_info import get_currency_stack_info
-from utils.nextFreeEquipmentCellCoords import nextFreeEquipmentCellCoords
+from src.utils.get_currency_placement import get_currency_placement
+from src.utils.item_info import get_currency_stack_info
+from src.utils.nextFreeEquipmentCellCoords import nextFreeEquipmentCellCoords
 
-from utils.printtime import printtime
+from src.utils.printtime import printtime
 from threading import Lock
 
 

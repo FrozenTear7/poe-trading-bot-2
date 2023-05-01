@@ -1,5 +1,5 @@
 import re
-from config.regexes import (
+from src.config.regexes import (
     AFK_MODE_ON_REGEX,
     CHAT_MESSAGE_REGEX,
     PLAYER_HAS_JOINED_THE_AREA_REGEX,
@@ -8,7 +8,7 @@ from config.regexes import (
     TRADE_CANCELLED_REGEX,
     TRADE_REQUEST_REGEX,
 )
-from config.constants import (
+from src.config.constants import (
     RABBITMQ_EXCHANGE_NAME,
     RABBITMQ_ROUTING_AFK_MODE,
     RABBITMQ_ROUTING_INCOMING_TRADE_REQUEST,
@@ -18,10 +18,10 @@ from config.constants import (
     RABBITMQ_ROUTING_TRADE_CANCELLED,
 )
 import pyautogui
-from config.user_setup import LOG_FILE_LOCATION
+from src.config.user_setup import LOG_FILE_LOCATION
 from src.trading_bot.TradeRequest import TradeRequest
 
-from utils.printtime import printtime
+from src.utils.printtime import printtime
 
 
 class LogListener:

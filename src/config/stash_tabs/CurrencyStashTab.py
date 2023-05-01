@@ -1,8 +1,8 @@
 from typing import List
-from config.stash_tabs.StashTab import StashTab
-from utils.exceptions.CurrencyInactive import CurrencyInactive
-from utils.exceptions.CurrencyNotImplemented import CurrencyNotImplemented
-from utils.translate_coords import translate_coords
+from src.config.stash_tabs.StashTab import StashTab
+from src.utils.exceptions.CurrencyInactive import CurrencyInactive
+from src.utils.exceptions.CurrencyNotImplemented import CurrencyNotImplemented
+from src.utils.translate_coords import translate_coords
 
 
 class CurrencyStashTab(StashTab):

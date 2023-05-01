@@ -1,4 +1,4 @@
-from config.user_setup import LEAGUE_NAME
+from src.config.user_setup import LEAGUE_NAME
 
 # Chat regexes
 

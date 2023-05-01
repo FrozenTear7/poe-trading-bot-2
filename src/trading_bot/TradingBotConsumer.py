@@ -1,6 +1,6 @@
 import threading
 import pika
-from config.constants import (
+from src.config.constants import (
     RABBITMQ_EXCHANGE_NAME,
     RABBITMQ_KILL_ALL_TRADING_BOT_THREADS,
 )
