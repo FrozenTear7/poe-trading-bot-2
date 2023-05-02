@@ -7,7 +7,7 @@ from utils.exceptions.CurrencyInvalidConfig import CurrencyInvalidConfig
 def get_currency_placement(currency_name: str, mode: Literal["sell", "buy"]):
     stash_tabs_with_given_currency = list(
         filter(
-            lambda x: x.mode == mode and currency_name in x.active_currencies,
+            lambda x: x.mode == mode and currency_name in x.currencies,
             STASH_TABS,
         )
     )

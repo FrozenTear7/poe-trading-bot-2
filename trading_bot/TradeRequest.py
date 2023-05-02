@@ -17,7 +17,11 @@ class TradeRequest:
         self.own_currency_amount = int(own_currency_amount)
         self.own_currency_name = own_currency_name
         self.trader_currency_amount = int(trader_currency_amount)
+        self.received_currency_amount = (
+            self.trader_currency_amount
+        )  # In case the trader gives us more than we asked for - it could increase the amount of eq cells we need to move
         self.trader_currency_name = trader_currency_name
+        self.trade_retries = 0
 
     def serialize(self):
         return json.dumps(

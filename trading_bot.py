@@ -1,6 +1,6 @@
-from typing import List
-
+import pytesseract
 import pyautogui
+from typing import List
 from config.constants import (
     RABBITMQ_ROUTING_AFK_MODE,
     RABBITMQ_ROUTING_INCOMING_TRADE_REQUEST,
@@ -8,7 +8,7 @@ from config.constants import (
     RABBITMQ_ROUTING_PLAYER_HAS_JOINED_THE_AREA,
     RABBITMQ_ROUTING_PLAYER_HAS_LEFT_THE_AREA,
 )
-from config.user_setup import STASH_TABS
+from config.user_setup import STASH_TABS, TESSERACT_PATH
 from trading_bot.PriceCalculator import PriceCalculator
 from trading_bot.chat_commands import type_clear_ignore_list
 from trading_bot.trading_bot_functions import (
@@ -24,6 +24,8 @@ from trading_bot.TradingBotConsumer import TradingBotConsumer
 
 
 if __name__ == "__main__":
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+
     consumer_threads: List[TradingBotConsumer] = []
     price_calculator = PriceCalculator()
 
@@ -31,9 +33,9 @@ if __name__ == "__main__":
     pyautogui.sleep(3)
 
     printtime("Setting prices in the stash")
-    for stash_tab in STASH_TABS:
-        for currency in stash_tab.active_currencies:
-            set_price(price_calculator, currency, stash_tab.mode, True)
+    # for stash_tab in STASH_TABS:
+    #     for currency in stash_tab.active_currencies:
+    #         set_price(price_calculator, currency, stash_tab.mode, True)
 
     printtime("Clearing the ignore list")
     # type_clear_ignore_list()

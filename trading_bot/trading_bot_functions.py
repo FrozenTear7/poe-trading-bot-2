@@ -1,4 +1,5 @@
 import json
+from multiprocessing import Process
 from typing import Literal
 import pyautogui
 from math import ceil
@@ -6,6 +7,7 @@ from config.constants import (
     PLAYER_JOINED_AREA_TRADE_WAIT_TIME,
     PLAYER_PARTY_INVITE_INACTIVITY_TIME,
     PLAYER_PARTY_INVITE_LOADING_WAIT_TIME,
+    TRADE_RETRIES,
 )
 from config.coordinates import (
     EQUIPMENT_START,
@@ -24,6 +26,7 @@ from trading_bot.chat_commands import (
     type_leave_party,
     type_trade_with_trader,
 )
+from utils.get_currency_buy_limit import get_currency_buy_limit
 from utils.get_currency_placement import get_currency_placement
 from utils.item_info import get_currency_stack_info, is_price_set
 from utils.equipmentCellCoordsByIndex import equipmentCellCoordsByIndex
@@ -112,9 +115,12 @@ def set_price(
 
 
 def take_currency(currency_amount: int, currency_name: str):
-    stash_index, sub_tab_placement, currency_placement = get_currency_placement(
-        currency_name, "sell"
-    )
+    (
+        stash_index,
+        sub_tab_placement,
+        currency_placement,
+        exchange_name,
+    ) = get_currency_placement(currency_name, "sell")
 
     printtime(f"Opening the stash to tab nr: {stash_index}")
     open_stash_to_tab(stash_index)
@@ -167,9 +173,12 @@ def take_currency(currency_amount: int, currency_name: str):
 
 
 def return_currency(currency_amount: int, currency_name: str):
-    stash_index, sub_tab_placement, currency_placement = get_currency_placement(
-        currency_name, "sell"
-    )
+    (
+        stash_index,
+        sub_tab_placement,
+        currency_placement,
+        exchange_name,
+    ) = get_currency_placement(currency_name, "sell")
 
     printtime(f"Opening the stash to tab nr: {stash_index}")
     open_stash_to_tab(stash_index)
@@ -186,7 +195,7 @@ def return_currency(currency_amount: int, currency_name: str):
 
     for i in range(total_cells_to_move):
         printtime(
-            f"Moving equipment cell {i} out of {total_cells_to_move} of currency {currency_name} back to the stash"
+            f"Moving equipment cell {i + 1} out of {total_cells_to_move} of currency: {currency_name} back to the stash"
         )
 
         pyautogui.keyDown("CTRL")
@@ -238,6 +247,31 @@ def kick_trader_for_inactivity(
     lock.release()
 
 
+def get_currency_amount_in_stash(currency_name: str):
+    (
+        stash_index,
+        sub_tab_placement,
+        currency_placement,
+        exchange_name,
+    ) = get_currency_placement(currency_name, "sell")
+
+    printtime(f"Opening the stash to tab nr: {stash_index}")
+    open_stash_to_tab(stash_index)
+
+    if sub_tab_placement is not None:
+        printtime("Opening the sub tab")
+        pyautogui.moveTo(sub_tab_placement)
+        pyautogui.click()
+
+    pyautogui.moveTo(currency_placement)
+    currency_stack_info = get_currency_stack_info()
+
+    printtime("Closing the stash")
+    exit_window()
+
+    return currency_stack_info
+
+
 # Callbacks
 
 
@@ -278,19 +312,43 @@ def incoming_trade_request_callback(
             f"Handling trade request from: {incoming_trade_request.trader_nickname}, your {incoming_trade_request.own_currency_amount} {incoming_trade_request.own_currency_name} for their {incoming_trade_request.trader_currency_amount} {incoming_trade_request.trader_currency_name}"
         )
 
-        type_invite_trader(incoming_trade_request.trader_nickname)
-
-        take_currency(
-            incoming_trade_request.own_currency_amount,
-            incoming_trade_request.own_currency_name,
+        own_currency_amount_in_stash = get_currency_amount_in_stash(
+            incoming_trade_request.own_currency_name
+        )[0]
+        trader_currency_amount_in_stash = get_currency_amount_in_stash(
+            incoming_trade_request.trader_currency_name
+        )[0]
+        currency_buy_limit = get_currency_buy_limit(
+            incoming_trade_request.trader_currency_name
         )
 
-        printtime(f"Changing state to: WAITING_FOR_TRADER")
-        trading_bot_state.state = TradingBotStateEnum.WAITING_FOR_TRADER
+        if own_currency_amount_in_stash < incoming_trade_request.own_currency_amount:
+            printtime(
+                f"Insufficient amount of currency: {incoming_trade_request.own_currency_name} - required: {incoming_trade_request.own_currency_amount}, in stash: {own_currency_amount_in_stash}"
+            )
+        elif (
+            incoming_trade_request.mode == "buy"
+            and trader_currency_amount_in_stash
+            + incoming_trade_request.trader_currency_amount
+            > currency_buy_limit
+        ):
+            printtime(
+                f"Acquiring {incoming_trade_request.trader_currency_amount} {incoming_trade_request.trader_currency_name} would go above the set buy limit of: {currency_buy_limit}, currently in stash: {trader_currency_amount_in_stash}"
+            )
+        else:
+            type_invite_trader(incoming_trade_request.trader_nickname)
 
-        Thread(
-            target=kick_trader_for_inactivity, args=(lock, trading_bot_state)
-        ).start()
+            take_currency(
+                incoming_trade_request.own_currency_amount,
+                incoming_trade_request.own_currency_name,
+            )
+
+            printtime(f"Changing state to: WAITING_FOR_TRADER")
+            trading_bot_state.state = TradingBotStateEnum.WAITING_FOR_TRADER
+
+            Thread(
+                target=kick_trader_for_inactivity, args=(lock, trading_bot_state)
+            ).start()
 
     lock.release()
 
@@ -346,10 +404,16 @@ def player_has_left_the_area_callback(
         == TradingBotStateEnum.TRADER_IN_THE_AREA_TIMEOUT_BEFORE_TRADE
         and trader_nickname == trading_bot_state.ongoing_trade_request.trader_nickname
     ):
+        printtime(
+            f"Trader left the party during the before trade wait period, leave the party and moving the currency back to the stash"
+        )
+
         type_leave_party()
 
-        # TODO: Move the currency back to the stash
-        # pyautogui.sleep(3)
+        return_currency(
+            trading_bot_state.ongoing_trade_request.own_currency_amount,
+            trading_bot_state.ongoing_trade_request.own_currency_name,
+        )
 
         printtime(f"Changing state to: READY")
         trading_bot_state.state = TradingBotStateEnum.READY
@@ -373,6 +437,55 @@ def not_in_the_party_callback(
             trading_bot_state.ongoing_trade_request.own_currency_amount,
             trading_bot_state.ongoing_trade_request.own_currency_name,
         )
+        printtime(f"Changing state to: READY")
+        trading_bot_state.state = TradingBotStateEnum.READY
+
+    lock.release()
+
+
+def trade_accepted_callback(
+    lock: Lock,
+    trading_bot_state: TradingBotState,
+    price_calculator: PriceCalculator,
+    trader_nickname: str,
+):
+    lock.acquire()
+
+    printtime(f"Trade succeeded, moving the currency to the stash")
+
+    return_currency(
+        trading_bot_state.ongoing_trade_request.trader_currency_amount,
+        trading_bot_state.ongoing_trade_request.trader_currency_name,
+    )
+
+    printtime(f"Changing state to: READY")
+    trading_bot_state.state = TradingBotStateEnum.READY
+
+    lock.release()
+
+
+def trade_cancelled_callback(
+    lock: Lock,
+    trading_bot_state: TradingBotState,
+    price_calculator: PriceCalculator,
+    trader_nickname: str,
+):
+    lock.acquire()
+
+    if trading_bot_state.ongoing_trade_request.trade_retries != TRADE_RETRIES:
+        trading_bot_state.ongoing_trade_request.trade_retries += 1
+    else:
+        printtime(
+            f"Trade cancelled, leaving the party and moving the currency to the stash"
+        )
+
+        type_leave_party()
+
+        return_currency(
+            trading_bot_state.ongoing_trade_request.own_currency_amount,
+            trading_bot_state.ongoing_trade_request.own_currency_name,
+        )
+
         printtime(f"Changing state to: READY")
         trading_bot_state.state = TradingBotStateEnum.READY
 
