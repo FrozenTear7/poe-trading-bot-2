@@ -1,0 +1,37 @@
+from typing import List
+from config.stash_tabs.CurrencyStashTab import CurrencyStashTab
+from config.stash_tabs.GenericStashTab import GenericStashTab
+from config.stash_tabs.StashTab import StashTab
+
+
+OWN_NICKNAME = "RainbowPablo"
+LEAGUE_NAME = "Crucible"
+
+# Steam
+LOG_FILE_LOCATION = (
+    "C:/Program Files (x86)/Steam/steamapps/common/Path of Exile/logs/Client.txt"
+)
+# Standalone client
+# LOG_FILE_LOCATION = (
+#     "C:/Program Files (x86)/Grinding Gear Games/Path of Exile/logs/Client.txt"
+# )
+
+STASH_TABS: List[StashTab] = [
+    CurrencyStashTab(
+        [
+            # ("Orb of Alchemy", "alch"),
+            # ("Exalted Orb", "exalted"),
+            # ("Cartographer's Chisel", "chisel"),
+            # ("Divine Orb", "divine"),
+        ]
+    ),
+    GenericStashTab(
+        "buy",
+        [
+            # ("Orb of Alchemy", "alch", 0, 0),
+            ("Exalted Orb", "exalted", 6, 6),
+            # ("Cartographer's Chisel", "chisel", 4, 4),
+            # ("Divine Orb", "divine", 6, 6),
+        ],
+    ),
+]

@@ -1,32 +1,32 @@
-from src.config.constants import (
+from config.constants import (
     RABBITMQ_EXCHANGE_NAME,
     RABBITMQ_KILL_ALL_TRADING_BOT_THREADS,
     RABBITMQ_ROUTING_AFK_MODE,
     RABBITMQ_ROUTING_INCOMING_TRADE_REQUEST,
+    RABBITMQ_ROUTING_NOT_IN_A_PARTY,
     RABBITMQ_ROUTING_PLAYER_HAS_JOINED_THE_AREA,
     RABBITMQ_ROUTING_PLAYER_HAS_LEFT_THE_AREA,
     RABBITMQ_ROUTING_TRADE_ACCEPTED,
     RABBITMQ_ROUTING_TRADE_CANCELLED,
 )
-from src.log_listener.LogListener import LogListener
-from src.utils.printtime import printtime
+from log_listener.LogListener import LogListener
+from utils.printtime import printtime
 import pika
 
 
 if __name__ == "__main__":
     connection = pika.BlockingConnection(
         pika.ConnectionParameters("localhost", heartbeat=0)
-        # pika.ConnectionParameters("localhost", heartbeat=None)
     )
     channel = connection.channel()
     channel.exchange_declare(exchange=RABBITMQ_EXCHANGE_NAME, exchange_type="direct")
 
     try:
-        printtime("Starting the Log Listener")
+        printtime("Starting the Log listener")
         log_listener = LogListener(channel)
         log_listener.listen()
     except KeyboardInterrupt:
-        printtime("Stopping the Log Listener")
+        printtime("Stopping the Log listener")
     except Exception as e:
         printtime("Encountered an exception:")
         print(e)
@@ -39,6 +39,7 @@ if __name__ == "__main__":
             RABBITMQ_ROUTING_INCOMING_TRADE_REQUEST,
             RABBITMQ_ROUTING_PLAYER_HAS_JOINED_THE_AREA,
             RABBITMQ_ROUTING_PLAYER_HAS_LEFT_THE_AREA,
+            RABBITMQ_ROUTING_NOT_IN_A_PARTY,
             RABBITMQ_ROUTING_TRADE_ACCEPTED,
             RABBITMQ_ROUTING_TRADE_CANCELLED,
         ]

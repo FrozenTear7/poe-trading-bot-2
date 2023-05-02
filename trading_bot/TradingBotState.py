@@ -1,4 +1,4 @@
-from src.trading_bot.TradingBotStateEnum import TradingBotStateEnum
+from trading_bot.TradingBotStateEnum import TradingBotStateEnum
 
 
 class TradingBotState:

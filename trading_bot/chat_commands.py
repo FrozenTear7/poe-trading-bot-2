@@ -1,7 +1,7 @@
 import pyautogui
-from src.config.user_setup import OWN_NICKNAME
+from config.user_setup import OWN_NICKNAME
 
-from src.utils.printtime import printtime
+from utils.printtime import printtime
 
 
 def type_logout():

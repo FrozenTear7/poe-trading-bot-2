@@ -1,11 +1,12 @@
 import threading
 import pika
-from src.config.constants import (
+from config.constants import (
     RABBITMQ_EXCHANGE_NAME,
     RABBITMQ_KILL_ALL_TRADING_BOT_THREADS,
 )
-from src.trading_bot.TradingBotState import TradingBotState
+from trading_bot.TradingBotState import TradingBotState
 from typing import Callable
+from trading_bot.PriceCalculator import PriceCalculator
 
 
 class TradingBotConsumer(threading.Thread):
@@ -15,20 +16,22 @@ class TradingBotConsumer(threading.Thread):
         self,
         routing_key: str,
         trading_bot_action: Callable[[threading.Lock, TradingBotState, str], None],
+        price_calculator: PriceCalculator,
         *args,
         **kwargs
     ) -> None:
         super(TradingBotConsumer, self).__init__(*args, **kwargs)
         self.routing_key = routing_key
         self.trading_bot_action = trading_bot_action
-        TradingBotConsumer._initialize()
+        TradingBotConsumer._initialize(price_calculator)
 
     @classmethod
-    def _initialize(cls):
+    def _initialize(cls, price_calculator: PriceCalculator):
         if not cls.initialized:
             cls.busy = False
             cls.trading_bot_state = TradingBotState()
             cls.lock = threading.Lock()
+            cls.price_calculator = price_calculator
             cls.initialized = True
 
     @classmethod
@@ -43,6 +46,7 @@ class TradingBotConsumer(threading.Thread):
             trading_bot_action(
                 cls.lock,
                 cls.trading_bot_state,
+                cls.price_calculator,
                 body,
             )
 

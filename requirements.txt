@@ -1,3 +1,5 @@
 pyautogui
 pika
 pyperclip
+requests
+sympy

@@ -7,7 +7,6 @@ class StashTab:
         mode: Literal["sell", "buy"],
         active_currencies: List[str],
     ) -> None:
-        self.type = type
         self.mode = mode
         self.active_currencies = active_currencies
 
@@ -15,4 +14,7 @@ class StashTab:
         ...
 
     def get_currency_coords(self, currency_name: str):
+        ...
+
+    def get_exchange_name(self, currency_name: str):
         ...

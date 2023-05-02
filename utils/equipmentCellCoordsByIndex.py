@@ -1,8 +1,8 @@
 from math import floor
-from src.config.coordinates import CELL_SIZE, EQUIPMENT_START, TRADE_WINDOW_CELLS
+from config.coordinates import CELL_SIZE, EQUIPMENT_START, TRADE_WINDOW_CELLS
 
 
-def nextFreeEquipmentCellCoords(index: int):
+def equipmentCellCoordsByIndex(index: int):
     eq_start_x, eq_start_y = EQUIPMENT_START
 
     row_offset = CELL_SIZE[0] * floor(index / TRADE_WINDOW_CELLS[0])
