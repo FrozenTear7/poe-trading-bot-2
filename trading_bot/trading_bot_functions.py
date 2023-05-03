@@ -83,12 +83,11 @@ def set_price(
         pyautogui.click()
 
     pyautogui.moveTo(currency_placement)
-    pyautogui.sleep(2)
 
     price_note = (
         price_calculator.get_buy_note(currency_name, exchange_name)
         if mode == "buy"
-        else price_calculator.get_sell_note(currency_name)
+        else price_calculator.get_sell_note(currency_name, exchange_name)
     )
 
     printtime(price_note)

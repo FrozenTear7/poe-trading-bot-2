@@ -8,6 +8,8 @@ OWN_NICKNAME = "RainbowPablo"
 # OWN_NICKNAME = "RecedingHairlineLOL"
 LEAGUE_NAME = "Crucible"
 
+POESESSID = "42efa60a7eb016f3ecfb82bb541aa6ac"
+
 TESSERACT_PATH = "C:/Program Files/Tesseract-OCR/tesseract"
 
 # Steam

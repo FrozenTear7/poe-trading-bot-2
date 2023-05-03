@@ -8,7 +8,7 @@ class StashTab:
         currencies: List[str],
         active_currencies: List[str],
     ) -> None:
-        self.mode = mode
+        self.mode: Literal["sell", "buy"] = mode
         self.currencies = currencies
         self.active_currencies = active_currencies
 
