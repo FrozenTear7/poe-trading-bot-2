@@ -12,6 +12,7 @@ PLAYER_HAS_LEFT_THE_AREA_REGEX = "(.+) has left the area\."
 NOT_A_PARTY_MEMBER_REGEX = "The target of this operation was not a party member\."
 TRADE_ACCEPTED_REGEX = "Trade accepted\."
 TRADE_CANCELLED_REGEX = "Trade cancelled\."
+PLAYER_NOT_FOUND_IN_THIS_AREA_REGEX = "Player not found in this area\."
 
 # Item regexes
 

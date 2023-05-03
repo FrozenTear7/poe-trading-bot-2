@@ -5,6 +5,7 @@ from config.regexes import (
     NOT_A_PARTY_MEMBER_REGEX,
     PLAYER_HAS_JOINED_THE_AREA_REGEX,
     PLAYER_HAS_LEFT_THE_AREA_REGEX,
+    PLAYER_NOT_FOUND_IN_THIS_AREA_REGEX,
     TRADE_ACCEPTED_REGEX,
     TRADE_CANCELLED_REGEX,
     TRADE_REQUEST_REGEX,
@@ -16,6 +17,7 @@ from config.constants import (
     RABBITMQ_ROUTING_NOT_IN_A_PARTY,
     RABBITMQ_ROUTING_PLAYER_HAS_JOINED_THE_AREA,
     RABBITMQ_ROUTING_PLAYER_HAS_LEFT_THE_AREA,
+    RABBITMQ_ROUTING_PLAYER_NOT_FOUND_IN_THIS_AREA,
     RABBITMQ_ROUTING_TRADE_ACCEPTED,
     RABBITMQ_ROUTING_TRADE_CANCELLED,
 )
@@ -80,6 +82,9 @@ class LogListener:
 
     def has_trade_been_cancelled(self, message: str):
         return re.match(TRADE_CANCELLED_REGEX, message) is not None
+
+    def was_player_not_found_in_this_area(self, message: str):
+        return re.match(PLAYER_NOT_FOUND_IN_THIS_AREA_REGEX, message) is not None
 
     def listen(self):
         while True:
@@ -178,11 +183,26 @@ class LogListener:
                         )
                         continue
 
-                    if self.has_trade_been_cancelled(chat_message):
+                    has_trade_been_cancelled = self.has_trade_been_cancelled(
+                        chat_message
+                    )
+                    if has_trade_been_cancelled:
                         printtime("Trade cancelled")
                         self.channel.basic_publish(
                             exchange=RABBITMQ_EXCHANGE_NAME,
                             routing_key=RABBITMQ_ROUTING_TRADE_CANCELLED,
+                            body="",
+                        )
+                        continue
+
+                    player_not_found_in_this_area = (
+                        self.was_player_not_found_in_this_area(chat_message)
+                    )
+                    if player_not_found_in_this_area:
+                        printtime("Player not found in this area")
+                        self.channel.basic_publish(
+                            exchange=RABBITMQ_EXCHANGE_NAME,
+                            routing_key=RABBITMQ_ROUTING_PLAYER_NOT_FOUND_IN_THIS_AREA,
                             body="",
                         )
                         continue

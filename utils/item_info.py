@@ -39,3 +39,9 @@ def is_price_set() -> bool:
         return stack_info_match is not None
     except:
         return False
+
+
+def item_under_cursor_exists() -> bool:
+    pyperclip.copy("")
+    pyautogui.hotkey("CTRL", "C")
+    return pyperclip.paste() != ""

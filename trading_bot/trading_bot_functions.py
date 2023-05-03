@@ -4,7 +4,7 @@ from typing import Literal
 import pyautogui
 from math import ceil
 from config.constants import (
-    PLAYER_JOINED_AREA_TRADE_WAIT_TIME,
+    TIMEOUT_BEFORE_TRADE,
     PLAYER_PARTY_INVITE_INACTIVITY_TIME,
     PLAYER_PARTY_INVITE_LOADING_WAIT_TIME,
     TRADE_RETRIES,
@@ -18,8 +18,7 @@ from config.coordinates import (
 )
 from config.user_setup import STASH_TABS
 from trading_bot.TradeRequest import TradeRequest
-from trading_bot.TradingBotState import TradingBotState
-from trading_bot.TradingBotStateEnum import TradingBotStateEnum
+from trading_bot.TradingBotState import TradingBotState, TradingBotStateEnum
 from trading_bot.chat_commands import (
     type_afk_off,
     type_invite_trader,
@@ -28,7 +27,11 @@ from trading_bot.chat_commands import (
 )
 from utils.get_currency_buy_limit import get_currency_buy_limit
 from utils.get_currency_placement import get_currency_placement
-from utils.item_info import get_currency_stack_info, is_price_set
+from utils.item_info import (
+    get_currency_stack_info,
+    is_price_set,
+    item_under_cursor_exists,
+)
 from utils.equipmentCellCoordsByIndex import equipmentCellCoordsByIndex
 from utils.printtime import printtime
 from trading_bot.PriceCalculator import PriceCalculator
@@ -80,6 +83,7 @@ def set_price(
         pyautogui.click()
 
     pyautogui.moveTo(currency_placement)
+    pyautogui.sleep(2)
 
     price_note = (
         price_calculator.get_buy_note(currency_name, exchange_name)
@@ -89,7 +93,7 @@ def set_price(
 
     printtime(price_note)
 
-    if is_price_set() and initial_set:
+    if not is_price_set() or initial_set:
         pyautogui.click(button="RIGHT")
 
         current_cursor_position = pyautogui.position()
@@ -103,10 +107,6 @@ def set_price(
         pyautogui.press("UP")
         pyautogui.press("ENTER")
         pyautogui.hotkey("CTRL", "A")
-        pyautogui.typewrite(price_note)
-        pyautogui.press("ENTER")
-    else:
-        pyautogui.click(button="RIGHT")
         pyautogui.typewrite(price_note)
         pyautogui.press("ENTER")
 
@@ -275,6 +275,49 @@ def get_currency_amount_in_stash(currency_name: str):
     return currency_stack_info
 
 
+def trade_process(
+    lock: Lock,
+    trading_bot_state: TradingBotState,
+    price_calculator: PriceCalculator,
+):
+    try:
+        pyautogui.moveTo(equipmentCellCoordsByIndex(0))
+
+        while True:
+            if trading_bot_state.state != TradingBotStateEnum.IN_TRADE:
+                printtime(f"Trade cancelled, finishing the trade process")
+                return
+            if item_under_cursor_exists():
+                break
+            pyautogui.sleep(0.5)
+
+        if trading_bot_state.state != TradingBotStateEnum.IN_TRADE:
+            printtime(f"Trade cancelled, finishing the trade process")
+            return
+        currency_stack_size = get_currency_stack_info()[1]
+
+        total_cells_to_move = ceil(
+            trading_bot_state.ongoing_trade_request.own_currency_amount
+            / currency_stack_size
+        )
+
+        for i in range(total_cells_to_move):
+            if trading_bot_state.state != TradingBotStateEnum.IN_TRADE:
+                printtime(f"Trade cancelled, finishing the trade process")
+                return
+
+            printtime(
+                f"Moving equipment cell {i + 1} out of {total_cells_to_move} of currency: {trading_bot_state.ongoing_trade_request.own_currency_name} to the trade window"
+            )
+
+            pyautogui.keyDown("CTRL")
+            pyautogui.moveTo(equipmentCellCoordsByIndex(i))
+            pyautogui.click()
+            pyautogui.keyUp("CTRL")
+    except:
+        printtime(f"Exception during trade, cancelling the process")
+
+
 # Callbacks
 
 
@@ -374,7 +417,7 @@ def player_has_joined_the_area_callback(
         )
         lock.release()
 
-        pyautogui.sleep(PLAYER_JOINED_AREA_TRADE_WAIT_TIME)
+        pyautogui.sleep(TIMEOUT_BEFORE_TRADE)
 
         # Start the trade if the player hasn't left during the wait time
         lock.acquire()
@@ -383,16 +426,19 @@ def player_has_joined_the_area_callback(
             trading_bot_state.state
             == TradingBotStateEnum.TRADER_IN_THE_AREA_TIMEOUT_BEFORE_TRADE
         ):
+            pyautogui.press("I")
+
             type_trade_with_trader(trader_nickname)
 
-            printtime(f"Changing state to: WAITING_FOR_TRADE_WINDOW")
-            trading_bot_state.state = TradingBotStateEnum.WAITING_FOR_TRADE_WINDOW
+            printtime(f"Changing state to: IN_TRADE")
+            trading_bot_state.state = TradingBotStateEnum.IN_TRADE
 
-        lock.release()
+            Thread(
+                target=trade_process,
+                args=(lock, trading_bot_state, price_calculator),
+            ).start()
 
-        # TODO: Thread with a function that checks if the window has appeared
-    else:
-        lock.release()
+    lock.release()
 
 
 def player_has_left_the_area_callback(
@@ -453,7 +499,7 @@ def trade_accepted_callback(
     lock: Lock,
     trading_bot_state: TradingBotState,
     price_calculator: PriceCalculator,
-    trader_nickname: str,
+    body: str,
 ):
     lock.acquire()
 
@@ -475,18 +521,44 @@ def trade_cancelled_callback(
     lock: Lock,
     trading_bot_state: TradingBotState,
     price_calculator: PriceCalculator,
-    trader_nickname: str,
+    body: str,
 ):
     lock.acquire()
 
     if trading_bot_state.ongoing_trade_request.trade_retries != TRADE_RETRIES:
+        printtime(
+            f"Trade cancelled, retrying (currently {trading_bot_state.ongoing_trade_request.trade_retries} retries out of {TRADE_RETRIES} allowed)"
+        )
+        trading_bot_state.state = TradingBotStateEnum.TRADE_CANCELLED
+
         trading_bot_state.ongoing_trade_request.trade_retries += 1
+
+        lock.release()
+
+        pyautogui.sleep(TIMEOUT_BEFORE_TRADE)
+
+        lock.acquire()
+        if trading_bot_state.state == TradingBotStateEnum.TRADE_CANCELLED:
+            type_trade_with_trader(
+                trading_bot_state.ongoing_trade_request.trader_nickname
+            )
+
+            printtime(f"Changing state to: IN_TRADE")
+            trading_bot_state.state = TradingBotStateEnum.IN_TRADE
+
+            Thread(
+                target=trade_process,
+                args=(lock, trading_bot_state, price_calculator),
+            ).start()
     else:
         printtime(
             f"Trade cancelled, leaving the party and moving the currency to the stash"
         )
+        trading_bot_state.state = TradingBotStateEnum.TRADE_CANCELLED
 
         type_leave_party()
+
+        pyautogui.press("I")
 
         return_currency(
             price_calculator,
@@ -496,5 +568,35 @@ def trade_cancelled_callback(
 
         printtime(f"Changing state to: READY")
         trading_bot_state.state = TradingBotStateEnum.READY
+
+    lock.release()
+
+
+def player_not_found_in_this_area_callback(
+    lock: Lock,
+    trading_bot_state: TradingBotState,
+    price_calculator: PriceCalculator,
+    body: str,
+):
+    lock.acquire()
+
+    printtime(
+        f"Trader left hideout during the trade, leaving the party and returning the currency back to the stash"
+    )
+
+    trading_bot_state.state = TradingBotStateEnum.PLAYER_LEFT_DURING_TRADE
+
+    type_leave_party()
+
+    pyautogui.press("I")
+
+    return_currency(
+        price_calculator,
+        trading_bot_state.ongoing_trade_request.own_currency_amount,
+        trading_bot_state.ongoing_trade_request.own_currency_name,
+    )
+
+    printtime(f"Changing state to: READY")
+    trading_bot_state.state = TradingBotStateEnum.READY
 
     lock.release()

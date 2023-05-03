@@ -7,6 +7,9 @@ from config.constants import (
     RABBITMQ_ROUTING_NOT_IN_A_PARTY,
     RABBITMQ_ROUTING_PLAYER_HAS_JOINED_THE_AREA,
     RABBITMQ_ROUTING_PLAYER_HAS_LEFT_THE_AREA,
+    RABBITMQ_ROUTING_PLAYER_NOT_FOUND_IN_THIS_AREA,
+    RABBITMQ_ROUTING_TRADE_ACCEPTED,
+    RABBITMQ_ROUTING_TRADE_CANCELLED,
 )
 from config.user_setup import STASH_TABS, TESSERACT_PATH
 from trading_bot.PriceCalculator import PriceCalculator
@@ -17,7 +20,10 @@ from trading_bot.trading_bot_functions import (
     not_in_the_party_callback,
     player_has_joined_the_area_callback,
     player_has_left_the_area_callback,
+    player_not_found_in_this_area_callback,
     set_price,
+    trade_accepted_callback,
+    trade_cancelled_callback,
 )
 from utils.printtime import printtime
 from trading_bot.TradingBotConsumer import TradingBotConsumer
@@ -71,6 +77,27 @@ if __name__ == "__main__":
     consumer_threads.append(
         TradingBotConsumer(
             RABBITMQ_ROUTING_NOT_IN_A_PARTY, not_in_the_party_callback, price_calculator
+        )
+    )
+    consumer_threads.append(
+        TradingBotConsumer(
+            RABBITMQ_ROUTING_TRADE_ACCEPTED,
+            trade_accepted_callback,
+            price_calculator,
+        )
+    )
+    consumer_threads.append(
+        TradingBotConsumer(
+            RABBITMQ_ROUTING_TRADE_CANCELLED,
+            trade_cancelled_callback,
+            price_calculator,
+        )
+    )
+    consumer_threads.append(
+        TradingBotConsumer(
+            RABBITMQ_ROUTING_PLAYER_NOT_FOUND_IN_THIS_AREA,
+            player_not_found_in_this_area_callback,
+            price_calculator,
         )
     )
 
