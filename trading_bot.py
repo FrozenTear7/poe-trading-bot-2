@@ -33,12 +33,12 @@ if __name__ == "__main__":
     pyautogui.sleep(3)
 
     printtime("Setting prices in the stash")
-    # for stash_tab in STASH_TABS:
-    #     for currency in stash_tab.active_currencies:
-    #         set_price(price_calculator, currency, stash_tab.mode, True)
+    for stash_tab in STASH_TABS:
+        for currency in stash_tab.active_currencies:
+            set_price(price_calculator, currency, stash_tab.mode, True)
 
     printtime("Clearing the ignore list")
-    # type_clear_ignore_list()
+    type_clear_ignore_list()
 
     printtime("Starting the consumer threads")
 

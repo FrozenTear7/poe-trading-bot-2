@@ -5,6 +5,7 @@ from config.stash_tabs.StashTab import StashTab
 
 
 OWN_NICKNAME = "RainbowPablo"
+# OWN_NICKNAME = "RecedingHairlineLOL"
 LEAGUE_NAME = "Crucible"
 
 TESSERACT_PATH = "C:/Program Files/Tesseract-OCR/tesseract"
@@ -21,8 +22,9 @@ LOG_FILE_LOCATION = (
 STASH_TABS: List[StashTab] = [
     CurrencyStashTab(
         [
-            # ("Orb of Alchemy", "alch"),
+            ("Orb of Alchemy", "alch", True),
             ("Exalted Orb", "exalted", True),
+            # ("Orb of Transmutation", "transmute", True),
             # ("Cartographer's Chisel", "chisel"),
             # ("Divine Orb", "divine"),
             ("Chaos Orb", "chaos", False),
@@ -31,8 +33,9 @@ STASH_TABS: List[StashTab] = [
     GenericStashTab(
         "buy",
         [
-            # ("Orb of Alchemy", "alch", 0, 0),
-            ("Exalted Orb", "exalted", 6, 6, 20),
+            ("Orb of Alchemy", "alch", 0, 0, 20),
+            ("Exalted Orb", "exalted", 1, 1, 20),
+            # ("Orb of Transmutation", "exalted", 1, 1, 400),
             # ("Cartographer's Chisel", "chisel", 4, 4),
             # ("Divine Orb", "divine", 6, 6),
         ],

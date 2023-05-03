@@ -89,11 +89,7 @@ def set_price(
 
     printtime(price_note)
 
-    if is_price_set():
-        pyautogui.click(button="RIGHT")
-        pyautogui.typewrite(price_note)
-        pyautogui.press("ENTER")
-    elif initial_set:
+    if is_price_set() and initial_set:
         pyautogui.click(button="RIGHT")
 
         current_cursor_position = pyautogui.position()
@@ -107,6 +103,10 @@ def set_price(
         pyautogui.press("UP")
         pyautogui.press("ENTER")
         pyautogui.hotkey("CTRL", "A")
+        pyautogui.typewrite(price_note)
+        pyautogui.press("ENTER")
+    else:
+        pyautogui.click(button="RIGHT")
         pyautogui.typewrite(price_note)
         pyautogui.press("ENTER")
 
@@ -172,7 +172,9 @@ def take_currency(currency_amount: int, currency_name: str):
     exit_window()
 
 
-def return_currency(currency_amount: int, currency_name: str):
+def return_currency(
+    price_calculator: PriceCalculator, currency_amount: int, currency_name: str
+):
     (
         stash_index,
         sub_tab_placement,
@@ -207,16 +209,16 @@ def return_currency(currency_amount: int, currency_name: str):
         pyautogui.keyUp("SHIFT")
         pyautogui.keyUp("CTRL")
 
-    pyautogui.moveTo(currency_placement)
-    # TODO: Price the currency again
-
     printtime("Closing the stash")
     exit_window()
+
+    set_price(price_calculator, currency_name, "sell", False)
 
 
 def kick_trader_for_inactivity(
     lock: Lock,
     trading_bot_state: TradingBotState,
+    price_calculator: PriceCalculator,
 ):
     pyautogui.sleep(PLAYER_PARTY_INVITE_INACTIVITY_TIME)
     lock.acquire()
@@ -238,6 +240,7 @@ def kick_trader_for_inactivity(
                 f"Trader has not loaded into the hideout after {PLAYER_PARTY_INVITE_LOADING_WAIT_TIME}s, moving the currency back to the stash"
             )
             return_currency(
+                price_calculator,
                 trading_bot_state.ongoing_trade_request.own_currency_amount,
                 trading_bot_state.ongoing_trade_request.own_currency_name,
             )
@@ -285,7 +288,6 @@ def afk_off_callback(
 
     if trading_bot_state.state == TradingBotStateEnum.READY:
         type_afk_off()
-        pyautogui.sleep(3)
 
     lock.release()
 
@@ -347,7 +349,8 @@ def incoming_trade_request_callback(
             trading_bot_state.state = TradingBotStateEnum.WAITING_FOR_TRADER
 
             Thread(
-                target=kick_trader_for_inactivity, args=(lock, trading_bot_state)
+                target=kick_trader_for_inactivity,
+                args=(lock, trading_bot_state, price_calculator),
             ).start()
 
     lock.release()
@@ -375,6 +378,7 @@ def player_has_joined_the_area_callback(
 
         # Start the trade if the player hasn't left during the wait time
         lock.acquire()
+
         if (
             trading_bot_state.state
             == TradingBotStateEnum.TRADER_IN_THE_AREA_TIMEOUT_BEFORE_TRADE
@@ -411,6 +415,7 @@ def player_has_left_the_area_callback(
         type_leave_party()
 
         return_currency(
+            price_calculator,
             trading_bot_state.ongoing_trade_request.own_currency_amount,
             trading_bot_state.ongoing_trade_request.own_currency_name,
         )
@@ -434,6 +439,7 @@ def not_in_the_party_callback(
             f"Trader has already left the party, moving the currency back to the stash"
         )
         return_currency(
+            price_calculator,
             trading_bot_state.ongoing_trade_request.own_currency_amount,
             trading_bot_state.ongoing_trade_request.own_currency_name,
         )
@@ -454,6 +460,7 @@ def trade_accepted_callback(
     printtime(f"Trade succeeded, moving the currency to the stash")
 
     return_currency(
+        price_calculator,
         trading_bot_state.ongoing_trade_request.trader_currency_amount,
         trading_bot_state.ongoing_trade_request.trader_currency_name,
     )
@@ -482,6 +489,7 @@ def trade_cancelled_callback(
         type_leave_party()
 
         return_currency(
+            price_calculator,
             trading_bot_state.ongoing_trade_request.own_currency_amount,
             trading_bot_state.ongoing_trade_request.own_currency_name,
         )

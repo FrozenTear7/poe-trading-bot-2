@@ -17,4 +17,4 @@ TRADE_CANCELLED_REGEX = "Trade cancelled\."
 
 ITEM_INFO_SECTION_DIVIDER = "--------\r\n"
 STACKS_SIZE_REGEX = "Stack Size: (\d+)\/(\d+)"
-PRICE_SET_REGEX = "~price .+"
+PRICE_SET_REGEX = "Note: .+"

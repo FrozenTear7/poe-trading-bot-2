@@ -8,4 +8,4 @@ EQUIPMENT_START = translate_coords(0.685, 0.557)
 
 PRICE_MENU_THRESHOLD = translate_coord(0.137, 0)
 PRICE_MENU_OFFSET = translate_coords(-0.048, 0.083)
-PRICE_MENU_OFFSET_UNDER_THRESHOLD = translate_coords(0, 0.833)
+PRICE_MENU_OFFSET_UNDER_THRESHOLD = translate_coords(0, 0.083)
