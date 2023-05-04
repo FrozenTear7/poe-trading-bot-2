@@ -4,3 +4,4 @@ pyperclip
 requests
 sympy
 pytesseract
+Pillow

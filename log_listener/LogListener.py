@@ -41,7 +41,6 @@ class LogListener:
 
     def has_incoming_trade_request(self, message: str):
         incoming_trade_request_match = re.match(TRADE_REQUEST_REGEX, message)
-        # TODO: Check if offered values match the current price we want
         return (
             TradeRequest(
                 incoming_trade_request_match.group(2),

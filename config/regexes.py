@@ -17,5 +17,6 @@ PLAYER_NOT_FOUND_IN_THIS_AREA_REGEX = "Player not found in this area\."
 # Item regexes
 
 ITEM_INFO_SECTION_DIVIDER = "--------\r\n"
-STACKS_SIZE_REGEX = "Stack Size: (\d+)\/(\d+)"
+INNER_SECTION_DIVIDER = "\r\n"
+STACK_SIZE_REGEX = "Stack Size: (\d+)\/(\d+)"
 PRICE_SET_REGEX = "Note: .+"

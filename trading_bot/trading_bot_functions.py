@@ -7,6 +7,8 @@ from config.constants import (
     TIMEOUT_BEFORE_TRADE,
     PLAYER_PARTY_INVITE_INACTIVITY_TIME,
     PLAYER_PARTY_INVITE_LOADING_WAIT_TIME,
+    TRADE_ACCEPTED_WAIT_RETRIES,
+    TRADE_CELL_RETRIES,
     TRADE_RETRIES,
 )
 from config.coordinates import (
@@ -15,6 +17,11 @@ from config.coordinates import (
     PRICE_MENU_OFFSET_UNDER_THRESHOLD,
     PRICE_MENU_THRESHOLD,
     STASH_PLACE,
+    TRADE_WINDOW_ACCEPT_BUTTON,
+    TRADE_WINDOW_ACCEPT_BUTTON_COLOR,
+    TRADE_WINDOW_ACCEPT_BUTTON_COLOR_TOLERANCE,
+    TRADE_WINDOW_CELLS,
+    TRADE_WINDOW_START,
 )
 from config.user_setup import STASH_TABS
 from trading_bot.TradeRequest import TradeRequest
@@ -29,10 +36,14 @@ from utils.get_currency_buy_limit import get_currency_buy_limit
 from utils.get_currency_placement import get_currency_placement
 from utils.item_info import (
     get_currency_stack_info,
+    get_trade_window_item_info,
     is_price_set,
     item_under_cursor_exists,
 )
-from utils.equipmentCellCoordsByIndex import equipmentCellCoordsByIndex
+from utils.equipment_cell_coords_by_index import (
+    equipment_cell_coords_by_index,
+    trade_window_cell_coords_by_index,
+)
 from utils.printtime import printtime
 from trading_bot.PriceCalculator import PriceCalculator
 from threading import Lock, Thread
@@ -150,7 +161,7 @@ def take_currency(currency_amount: int, currency_name: str):
 
             pyautogui.press("ENTER")
 
-            pyautogui.moveTo(equipmentCellCoordsByIndex(slots_taken))
+            pyautogui.moveTo(equipment_cell_coords_by_index(slots_taken))
             pyautogui.click()
 
             currency_taken += currency_amount_to_take
@@ -202,7 +213,7 @@ def return_currency(
         pyautogui.keyDown("CTRL")
         pyautogui.keyDown("SHIFT")
 
-        pyautogui.moveTo(equipmentCellCoordsByIndex(i))
+        pyautogui.moveTo(equipment_cell_coords_by_index(i))
         pyautogui.click()
 
         pyautogui.keyUp("SHIFT")
@@ -280,7 +291,8 @@ def trade_process(
     price_calculator: PriceCalculator,
 ):
     try:
-        pyautogui.moveTo(equipmentCellCoordsByIndex(0))
+        pyautogui.sleep(5)
+        pyautogui.moveTo(equipment_cell_coords_by_index(0))
 
         while True:
             if trading_bot_state.state != TradingBotStateEnum.IN_TRADE:
@@ -310,9 +322,109 @@ def trade_process(
             )
 
             pyautogui.keyDown("CTRL")
-            pyautogui.moveTo(equipmentCellCoordsByIndex(i))
+            pyautogui.moveTo(equipment_cell_coords_by_index(i))
             pyautogui.click()
             pyautogui.keyUp("CTRL")
+
+        pyautogui.moveTo(TRADE_WINDOW_START)
+
+        i = 0
+        retry_counter = 0
+        trade_accepted_wait_counter = 0
+        ready_to_accept = False
+        accepted = False
+        counted_amount = 0
+        while True:
+            if trading_bot_state.state != TradingBotStateEnum.IN_TRADE:
+                printtime(f"Trade cancelled, finishing the trade process")
+                return
+
+            if not pyautogui.pixelMatchesColor(
+                TRADE_WINDOW_ACCEPT_BUTTON[0],
+                TRADE_WINDOW_ACCEPT_BUTTON[1],
+                TRADE_WINDOW_ACCEPT_BUTTON_COLOR,
+                tolerance=TRADE_WINDOW_ACCEPT_BUTTON_COLOR_TOLERANCE,
+            ):
+                if ready_to_accept:
+                    retry_counter += 1
+                    continue
+                else:
+                    printtime(
+                        f"Trader changed something in the already put in items, cancelling"
+                    )
+                    return
+
+            if ready_to_accept:
+                if not accepted:
+                    pyautogui.click()
+                    accepted = True
+                elif trade_accepted_wait_counter < TRADE_ACCEPTED_WAIT_RETRIES:
+                    pyautogui.sleep(1)
+                    trade_accepted_wait_counter += 1
+                else:
+                    printtime(f"Trade cancelled, finishing the trade process")
+                    pyautogui.press('ESC')
+
+
+            if retry_counter == TRADE_CELL_RETRIES:
+                printtime(f"Trade cancelled, finishing the trade process")
+                i = 0
+                retry_counter = 0
+                counted_amount = 0
+
+            # To avoid accidentally hovering over trade window cells that could mess up the check we go around the trade window when changing columns
+            if i % TRADE_WINDOW_CELLS[0] == 0:
+                current_position = pyautogui.position()
+                resolution = pyautogui.size()
+
+                # Move to the bottom
+                pyautogui.moveTo(current_position[0], resolution[1])
+                # Move to the left
+                pyautogui.moveTo(1, current_position[1])
+                # Move to the top
+                pyautogui.moveTo(1, 1)
+                # Move above the current col
+                pyautogui.moveTo(trade_window_cell_coords_by_index(i)[0], 1)
+
+            pyautogui.moveTo(trade_window_cell_coords_by_index(i))
+
+            item_info = get_trade_window_item_info()
+
+            if item_info is not None:
+                printtime(f"Trade window cell: {i} contains {cell_amount} {item_name}")
+                item_name, cell_amount = item_info
+
+                if (
+                    item_name
+                    != trading_bot_state.ongoing_trade_request.trader_currency_name
+                ):
+                    pyautogui.press("ESC")
+                    printtime(
+                        f"Received {item_name} instead of {trading_bot_state.ongoing_trade_request.trader_currency_name}, cancelling the trade"
+                    )
+                    return
+
+                counted_amount += cell_amount
+                printtime(
+                    f"Trader has put in {counted_amount} of {trading_bot_state.ongoing_trade_request.trader_currency_amount}"
+                )
+                i += 1
+                retry_counter = 0
+
+                if (
+                    counted_amount
+                    >= trading_bot_state.ongoing_trade_request.trader_currency_amount
+                ):
+                    printtime(
+                        f"Trader has put in the required amount: {counted_amount} of {trading_bot_state.ongoing_trade_request.trader_currency_amount}, trying to accept the trade"
+                    )
+                    pyautogui.moveTo(TRADE_WINDOW_ACCEPT_BUTTON)
+                    ready_to_accept = True
+            else:
+                printtime(f"Waiting for trade window cell: {i}")
+                pyautogui.sleep(0.1)
+                retry_counter += 1
+
     except:
         printtime(f"Exception during trade, cancelling the process")
 
